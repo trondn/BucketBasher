@@ -35,10 +35,10 @@ public class MixedLoadClient extends AutoClient {
         short vbucket = (short) random.nextInt(1024);
         int ii = random.nextInt(100);
         try {
-            if (ii < 50) {
-                client.set("key-" + ii, vbucket, new byte[random.nextInt(32767)], 0, 0);
+            if (ii < 33) {
+                client.set("key-" + random.nextInt(10000), vbucket, new byte[random.nextInt(32767)], 0, 0);
             } else {
-                client.get("key-" + ii, vbucket);
+                client.get("key-" + random.nextInt(10000), vbucket);
             }
         } catch (IOException exp) {
             Logger.getLogger(this.getClass().getName()).log(Level.WARNING, "Sending ETMPFAIL for:", exp);
