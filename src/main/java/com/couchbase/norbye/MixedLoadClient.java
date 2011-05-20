@@ -32,16 +32,24 @@ public class MixedLoadClient extends AutoClient {
 
     @Override
     public void execute() {
-        short vbucket = (short) random.nextInt(1024);
-        int ii = random.nextInt(100);
-        try {
-            if (ii < 33) {
-                client.set("key-" + random.nextInt(10000), vbucket, new byte[random.nextInt(32767)], 0, 0);
-            } else {
-                client.get("key-" + random.nextInt(10000), vbucket);
+        short vbucket = 0; //(short) random.nextInt(1024);
+        try {     
+            int ii = 0;
+            String key = "key-" + random.nextInt(10000);
+            while (!client.set("key-" + key, vbucket, new byte[random.nextInt(32)], 0, 0)) {
+                ++ii;
+                if (ii < 10) {
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException ex) {
+                        Logger.getLogger(MixedLoadClient.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                } else {
+                    Logger.getLogger(MixedLoadClient.class.getName()).log(Level.SEVERE, "Failed to set item: {0}", key);
+                }
             }
         } catch (IOException exp) {
-            Logger.getLogger(this.getClass().getName()).log(Level.WARNING, "Sending ETMPFAIL for:", exp);
+            Logger.getLogger(this.getClass().getName()).log(Level.WARNING, "Failed setting object:", exp);
         }
     }
 }
