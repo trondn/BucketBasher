@@ -34,9 +34,10 @@ public class TapClient extends AutoClient {
     @Override
     public void execute() {
         try {
+             Logger.getLogger(TapClient.class.getName()).log(Level.FINE, "Starting tap for {0}", Thread.currentThread().getName());
             client.tap(Thread.currentThread().getName(), new RandomErrorTapConsumer());
         } catch (EOFException ex) {
-            Logger.getLogger(TapClient.class.getName()).log(Level.FINE, null, ex);
+            Logger.getLogger(TapClient.class.getName()).log(Level.FINE, "EOF", ex);
         } catch (IOException ex) {
             Logger.getLogger(TapClient.class.getName()).log(Level.SEVERE, null, ex);
         }
