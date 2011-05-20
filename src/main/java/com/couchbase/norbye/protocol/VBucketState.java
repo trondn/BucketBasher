@@ -26,7 +26,7 @@ public enum VBucketState {
     private final int value;
 
     VBucketState(int value) {
-        this.value = (byte) value;
+        this.value = value;
     }
 
     public int cc() {
