@@ -34,12 +34,13 @@ public class RandomErrorTapConsumer implements TapConsumer {
     }
 
     private ErrorCode next(ComCode cc) {
-        int rand = random.nextInt(100);
+        int rand = random.nextInt(1000);
 
-        if (rand == 0) { // 1% of ENOMEMS
+        if (rand == 1000) { //DISABLED
+            Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, "Sending ENOMEM for: {0}", cc.name());
             return ErrorCode.ENOMEM;
         }
-        if (rand > 94) {  // 5% temp failures
+        if (rand == 1) {
             Logger.getLogger(this.getClass().getName()).log(Level.FINE, "Sending ETMPFAIL for: {0}", cc.name());
             return ErrorCode.ETMPFAIL;
         }
