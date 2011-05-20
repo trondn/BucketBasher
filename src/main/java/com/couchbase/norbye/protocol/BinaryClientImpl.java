@@ -19,6 +19,8 @@ import com.couchbase.norbye.MemcachedClient;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.Collection;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -41,6 +43,16 @@ public class BinaryClientImpl implements MemcachedClient {
             socket = new Socket(host, port);
             pipe = new BinaryProtocolPipe(socket);
         }
+    }
+
+    private void resetPipe() {
+        try {
+            socket.close();
+        } catch (IOException ex) {
+            Logger.getLogger(BinaryClientImpl.class.getName()).log(Level.FINE, "Failed to close pipe", ex);
+        }
+        pipe = null;
+
     }
 
     private ErrorCode dispatchTapCommand(BinaryTapCommand cmd, TapConsumer consumer) {
@@ -69,8 +81,7 @@ public class BinaryClientImpl implements MemcachedClient {
         }
     }
 
-    @Override
-    public void tap(String name, TapConsumer consumer) throws IOException {
+    public void doTap(String name, TapConsumer consumer) throws IOException {
         ensurePipe();
         pipe.send(new BinaryTapConnectCommand(name));
 
@@ -87,6 +98,16 @@ public class BinaryClientImpl implements MemcachedClient {
                     }
                 }
             }
+        }
+    }
+
+    @Override
+    public void tap(String name, TapConsumer consumer) throws IOException {
+        try {
+            doTap(name, consumer);
+        } catch (IOException exp) {
+            resetPipe();
+            throw exp;
         }
     }
 
@@ -125,7 +146,7 @@ public class BinaryClientImpl implements MemcachedClient {
     }
 
     @Override
-    public boolean set(String key, short vbucket, byte[] data, int flags, int exptime)  throws IOException {
+    public boolean set(String key, short vbucket, byte[] data, int flags, int exptime) throws IOException {
         ensurePipe();
         pipe.send(new BinarySetCommand(key, vbucket, data, flags, exptime));
         BinaryMessage msg = pipe.next();
