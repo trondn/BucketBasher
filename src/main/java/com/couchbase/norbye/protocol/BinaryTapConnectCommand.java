@@ -16,6 +16,7 @@
 package com.couchbase.norbye.protocol;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Collection;
 
 /**
@@ -31,21 +32,15 @@ import java.util.Collection;
     public static final int TAP_CONNECT_REQUEST_KEYS_ONLY = 0x20;
     public static final int TAP_CONNECT_CHECKPOINT = 0x40;
     public static final int TAP_CONNECT_REGISTERED_CLIENT = 0x80;
-
+    
+    private static Collection<Integer> getList() {
+        ArrayList<Integer> ret = new ArrayList<Integer>();
+        ret.add(Integer.valueOf(0));
+        return ret;
+    }
+    
     public BinaryTapConnectCommand(String name) {
-        array = new byte[HEADER_SIZE + 4 + name.length()];
-        bytebuffer = ByteBuffer.wrap(array);
-        bytebuffer.put(COMMAND); // magic
-        bytebuffer.put(ComCode.TAP_CONNECT.cc()); // com code
-        bytebuffer.putShort((short) name.length()); // keylen
-        bytebuffer.put((byte) 4); //extlen
-        bytebuffer.put((byte) 0); //datatype
-        bytebuffer.putShort((short) 0); // bucket
-        bytebuffer.putInt(array.length - HEADER_SIZE); // bodylen
-        bytebuffer.putInt(0xdeadbeef); // opaque
-        bytebuffer.putLong(0); // cas
-        bytebuffer.putInt(TAP_CONNECT_SUPPORT_ACK); // flags
-        bytebuffer.put(name.getBytes());
+        this(name, getList(), false);
     }
 
     public BinaryTapConnectCommand(String name, Collection<Integer> vbucket, boolean takeover) {
