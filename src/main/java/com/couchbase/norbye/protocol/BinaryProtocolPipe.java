@@ -48,7 +48,7 @@ import java.net.Socket;
     public BinaryMessage next() throws IOException {
         BinaryMessage ret;
         do {
-            ret = BinaryMessage.next(in);
+            ret = BinaryMessageFactory.next(in);
         } while (ret.getCode() == ComCode.NOOP); // @todo fixme
         
         return ret;

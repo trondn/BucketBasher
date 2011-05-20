@@ -36,60 +36,34 @@ public class Main {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        // TODO code application logic here
 
-//        MemcachedClient client = MemcachedClientFactory.create("localhost", 11211);
-//        try {
-//            client.createBucket("trond", "ep.so", "dbname=/tmp/trond-test;max_size=1024000;tap_keepalive=200");
-//            client.selectBucket("trond");
-//        } catch (IOException ex) {
-//            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
-//        }
-        
-//        try {
-//            List<Integer> vbuckets = new ArrayList<Integer>();
-//            for (int ii = 0; ii < 1024; ++ii) {
-//                if (!client.setVBucket((short) ii, VBucketState.ACTIVE)) {
-//                    System.out.println("Failed to create vbucket: " + ii);
-//                }
-//                vbuckets.add(ii);
-//            }
-//
-            List<AutoClient> clients = new ArrayList<AutoClient>();
-            for (int ii = 0; ii < 15; ++ii) {
-                MemcachedClient c = MemcachedClientFactory.create("localhost", 11211);
-                //c.selectBucket("trond");
-                clients.add(new TapClient(c));
+        List<AutoClient> clients = new ArrayList<AutoClient>();
+        clients.add(new TapClient(MemcachedClientFactory.create("localhost", 11211)));
 
+        for (int ii = 0; ii < 15; ++ii) {
+            clients.add(new DumpClient(MemcachedClientFactory.create("localhost", 11211)));
+        }
+
+        for (int ii = 0; ii < 15; ++ii) {
+            clients.add(new MixedLoadClient(MemcachedClientFactory.create("localhost", 11211)));
+        }
+
+        List<Thread> threads = new ArrayList<Thread>();
+        for (AutoClient c : clients) {
+            Thread t = new Thread(c);
+            threads.add(t);
+            t.start();
+        }
+
+
+        // wait for all of them to stop..
+        for (Thread t : threads) {
+            try {
+                t.join();
+            } catch (InterruptedException ex) {
+                Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
             }
-
-            for (int ii = 0; ii < 15; ++ii) {
-                MemcachedClient c = MemcachedClientFactory.create("localhost", 11211);
-//                c.selectBucket("trond");
-                clients.add(new MixedLoadClient(c));
-            }
-
-
-
-            List<Thread> threads = new ArrayList<Thread>();
-            for (AutoClient c : clients) {
-                Thread t = new Thread(c);
-                threads.add(t);
-                t.start();
-            }
-
-
-            // wait for all of them to stop..
-            for (Thread t : threads) {
-                try {
-                    t.join();
-                } catch (InterruptedException ex) {
-                    Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
-                }
-            }
-//        } catch (IOException ex) {
-//            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
-//        }
+        }
     }
 
     private Main() {

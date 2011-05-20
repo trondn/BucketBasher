@@ -30,23 +30,40 @@ public class MixedLoadClient extends AutoClient {
         super(client);
     }
 
+    private void sleep(long time) {
+        try {
+            Thread.sleep(time);
+        } catch (InterruptedException ex) {
+            Logger.getLogger(MixedLoadClient.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    private boolean get(String key) throws IOException {
+        return (client.get(key, (short) 0) == null) ? false : true;
+    }
+
+    private boolean set(String key, int size) throws IOException {
+        int ii = 0;
+        while (!client.set("key-" + key, (short) 0, new byte[size], 0, 0)) {
+            ++ii;
+            if (ii < 10) {
+                sleep(ii * 1000);
+            } else {
+                Logger.getLogger(MixedLoadClient.class.getName()).log(Level.SEVERE, "Failed to set item: {0}", key);
+                return false;
+            }
+        }
+        return true;
+    }
+
     @Override
     public void execute() {
-        short vbucket = 0; //(short) random.nextInt(1024);
-        try {     
-            int ii = 0;
+        try {
             String key = "key-" + random.nextInt(10000);
-            while (!client.set("key-" + key, vbucket, new byte[random.nextInt(32)], 0, 0)) {
-                ++ii;
-                if (ii < 10) {
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException ex) {
-                        Logger.getLogger(MixedLoadClient.class.getName()).log(Level.SEVERE, null, ex);
-                    }
-                } else {
-                    Logger.getLogger(MixedLoadClient.class.getName()).log(Level.SEVERE, "Failed to set item: {0}", key);
-                }
+            if (random.nextInt(3) == 1) {
+                set(key, random.nextInt(32));
+            } else {
+                get(key);
             }
         } catch (IOException exp) {
             Logger.getLogger(this.getClass().getName()).log(Level.WARNING, "Failed setting object:", exp);

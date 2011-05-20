@@ -16,71 +16,45 @@
 package com.couchbase.norbye.protocol;
 
 import java.util.Random;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
- * This is a TAP consumer that experience problems consuming tap events.
- * The current implementation use a 10% fixed temporary failures and no
- * hard failures.
+ * Just swallow all of the data
  *
  * @author Trond Norbye <trond.norbye@gmail.com>
  */
-public class RandomErrorTapConsumer implements TapConsumer {
-    private Random random;
-
-    public RandomErrorTapConsumer() {
-        random = new Random();
-    }
-
-    private ErrorCode next(ComCode cc) {
-        int rand = random.nextInt(10000);
-
-        if (rand == 6666) { 
-            Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, "Sending ENOMEM for: {0}", cc.name());
-            return ErrorCode.ENOMEM;
-        }
-        
-        if (rand > 300 && rand < 305) {
-            Logger.getLogger(this.getClass().getName()).log(Level.FINE, "Sending ETMPFAIL for: {0}", cc.name());
-            return ErrorCode.ETMPFAIL;
-        }
-
+public class BlackholeTapConsumer implements TapConsumer {
+    @Override
+    public ErrorCode mutation(String key, byte[] data, int offset, int len, int flags, int expiration) {
         return ErrorCode.SUCCESS;
     }
 
     @Override
-    public ErrorCode mutation(String key, byte[] data, int offset, int len, int flags, int expiration) {
-        return next(ComCode.TAP_MUTATION);
-    }
-
-    @Override
     public ErrorCode delete(String key) {
-        return next(ComCode.TAP_DELETE);
+        return ErrorCode.SUCCESS;
     }
 
     @Override
     public ErrorCode flush() {
-        return next(ComCode.TAP_FLUSH);
+        return ErrorCode.SUCCESS;
     }
 
     @Override
     public ErrorCode opaque(byte[] data) {
-        return next(ComCode.TAP_OPAQUE);
+        return ErrorCode.SUCCESS;
     }
 
     @Override
     public ErrorCode vbucketSet(byte[] data) {
-        return next(ComCode.TAP_VBUCKET_SET);
+        return ErrorCode.SUCCESS;
     }
 
     @Override
     public ErrorCode checkpointStart(byte[] data) {
-        return next(ComCode.TAP_CHECKPOINT_START);
+        return ErrorCode.SUCCESS;
     }
 
     @Override
     public ErrorCode checkpointEnd(byte[] data) {
-        return next(ComCode.TAP_CHECKPOINT_END);
+        return ErrorCode.SUCCESS;
     }
 }

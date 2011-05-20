@@ -42,4 +42,6 @@ public interface MemcachedClient {
     void takeover(String name, TapConsumer consumer, Collection<Integer> vbuckets) throws IOException;
 
     void tap(String name, TapConsumer consumer) throws IOException;
+
+    public void dump(String name, TapConsumer consumer) throws IOException;
 }

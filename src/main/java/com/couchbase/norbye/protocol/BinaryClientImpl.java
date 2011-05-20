@@ -86,9 +86,9 @@ public class BinaryClientImpl implements MemcachedClient {
         }
     }
 
-    public void doTap(String name, TapConsumer consumer) throws IOException {
+    public void doTap(String name, TapConsumer consumer, boolean dump) throws IOException {
         ensurePipe();
-        pipe.send(new BinaryTapConnectCommand(name));
+        pipe.send(new BinaryMessageFactory.BinaryTapConnectCommand(name, dump));
 
         while (socket.isConnected()) {
             BinaryMessage msg = pipe.next();
@@ -109,17 +109,29 @@ public class BinaryClientImpl implements MemcachedClient {
     @Override
     public void tap(String name, TapConsumer consumer) throws IOException {
         try {
-            doTap(name, consumer);
+            doTap(name, consumer, false);
         } catch (IOException exp) {
-            resetPipe();
             throw exp;
+        } finally {
+            resetPipe();
+        }
+    }
+
+    @Override
+    public void dump(String name, TapConsumer consumer) throws IOException {
+        try {
+            doTap(name, consumer, true);
+        } catch (IOException exp) {
+            throw exp;
+        } finally {
+            resetPipe();
         }
     }
 
     @Override
     public void takeover(String name, TapConsumer consumer, Collection<Integer> vbuckets) throws IOException {
         ensurePipe();
-        pipe.send(new BinaryTapConnectCommand(name, vbuckets, true));
+        pipe.send(new BinaryMessageFactory.BinaryTapConnectCommand(name, vbuckets, true));
 
         while (socket.isConnected()) {
             BinaryMessage msg = pipe.next();
@@ -143,7 +155,7 @@ public class BinaryClientImpl implements MemcachedClient {
         pipe.send(new BinarySetVbucketCommand(id, state));
         BinaryMessage msg = pipe.next();
         if (msg instanceof BinaryResponse) {
-            BinaryResponse rsp = (BinaryResponse)msg;
+            BinaryResponse rsp = (BinaryResponse) msg;
             return rsp.getStatus() == ErrorCode.SUCCESS;
         } else {
             throw new RuntimeException("Unexpected message");
@@ -153,13 +165,18 @@ public class BinaryClientImpl implements MemcachedClient {
     @Override
     public boolean set(String key, short vbucket, byte[] data, int flags, int exptime) throws IOException {
         ensurePipe();
-        pipe.send(new BinarySetCommand(key, vbucket, data, flags, exptime));
-        BinaryMessage msg = pipe.next();
-        if (msg instanceof BinaryResponse) {
-            BinaryResponse rsp = (BinaryResponse)msg;
-            return rsp.getStatus() == ErrorCode.SUCCESS;
-        } else {
-            throw new RuntimeException("Unexpected message");
+        try {
+            pipe.send(new BinarySetCommand(key, vbucket, data, flags, exptime));
+            BinaryMessage msg = pipe.next();
+            if (msg instanceof BinaryResponse) {
+                BinaryResponse rsp = (BinaryResponse) msg;
+                return rsp.getStatus() == ErrorCode.SUCCESS;
+            } else {
+                throw new RuntimeException("Unexpected message");
+            }
+        } catch (IOException e) {
+            resetPipe();
+            throw e;
         }
     }
 
@@ -175,7 +192,7 @@ public class BinaryClientImpl implements MemcachedClient {
         pipe.send(new BinaryCreateBucket(name, module, config));
         BinaryMessage msg = pipe.next();
         if (msg instanceof BinaryResponse) {
-            BinaryResponse rsp = (BinaryResponse)msg;
+            BinaryResponse rsp = (BinaryResponse) msg;
             return rsp.getStatus();
         } else {
             throw new RuntimeException("Unexpected message");
@@ -188,7 +205,7 @@ public class BinaryClientImpl implements MemcachedClient {
         pipe.send(new BinarySelectBucket(name));
         BinaryMessage msg = pipe.next();
         if (msg instanceof BinaryResponse) {
-            BinaryResponse rsp = (BinaryResponse)msg;
+            BinaryResponse rsp = (BinaryResponse) msg;
             return rsp.getStatus();
         } else {
             throw new RuntimeException("Unexpected message");
@@ -201,7 +218,7 @@ public class BinaryClientImpl implements MemcachedClient {
         pipe.send(new BinaryDeleteBucket(name, force));
         BinaryMessage msg = pipe.next();
         if (msg instanceof BinaryResponse) {
-            BinaryResponse rsp = (BinaryResponse)msg;
+            BinaryResponse rsp = (BinaryResponse) msg;
             return rsp.getStatus();
         } else {
             throw new RuntimeException("Unexpected message");

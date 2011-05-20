@@ -15,9 +15,6 @@
  */
 package com.couchbase.norbye.protocol;
 
-import java.io.EOFException;
-import java.io.IOException;
-import java.io.InputStream;
 import java.nio.ByteBuffer;
 
 /**
@@ -26,45 +23,10 @@ import java.nio.ByteBuffer;
  */
 class BinaryMessage {
 
-    static byte COMMAND = (byte) 0x80;
-    static byte RESPONSE = (byte) 0x81;
+    static byte COMMAND = Magic.REQUEST.cc();
+    static byte RESPONSE = Magic.RESPONSE.cc();
     static final int HEADER_SIZE = 24;
 
-    private static void doRead(InputStream in, byte[] array) throws IOException {
-        int offset = 0;
-        do {
-            int nr = in.read(array, offset, array.length - offset);
-            if (nr == -1) {
-                throw new EOFException();
-            }
-            offset += nr;
-        } while (offset < array.length);
-    }
-
-    static BinaryMessage next(InputStream in) throws IOException {
-        ByteBuffer header;
-        byte h[] = new byte[HEADER_SIZE];
-        header = ByteBuffer.wrap(h);
-
-        doRead(in, h);
-
-        int body = header.getInt(8);
-        byte[] data;
-        if (body > 0) {
-            data = new byte[header.getInt(8)];
-            doRead(in, data);
-        } else {
-            data = new byte[0];
-        }
-
-        if (h[0] == COMMAND) {
-            return new BinaryCommand(h, data);
-        } else if (h[0] == RESPONSE) {
-            return new BinaryResponse(h, data);
-        }
-
-        throw new RuntimeException("Protocol error");
-    }
     byte[] array;
     ByteBuffer bytebuffer;
 
@@ -85,6 +47,10 @@ class BinaryMessage {
 
     int getOpaque() {
         return bytebuffer.getInt(12);
+    }
+    
+    void setOpaque(int opaque) {
+        bytebuffer.putInt(12, opaque);
     }
 
     String getKey() {
