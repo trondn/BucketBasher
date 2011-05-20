@@ -16,6 +16,11 @@
 package com.couchbase.norbye.protocol;
 
 import com.couchbase.norbye.MemcachedClient;
+import com.couchbase.norbye.protocol.BinaryMessageFactory.BinaryCreateBucket;
+import com.couchbase.norbye.protocol.BinaryMessageFactory.BinaryDeleteBucket;
+import com.couchbase.norbye.protocol.BinaryMessageFactory.BinarySelectBucket;
+import com.couchbase.norbye.protocol.BinaryMessageFactory.BinarySetCommand;
+import com.couchbase.norbye.protocol.BinaryMessageFactory.BinarySetVbucketCommand;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.Collection;
